@@ -1,3 +1,0 @@
-First run 'make deps' to install node dependencies
-
-Then run 'make' to create the proper docker container
