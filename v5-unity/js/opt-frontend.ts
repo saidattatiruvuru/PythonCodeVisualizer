@@ -71,7 +71,9 @@ export class OptFrontend extends AbstractBaseFrontend {
   // some subclasses use these, so put them in the superclass
   activateSyntaxErrorSurvey: boolean = true;
   activateRuntimeErrorSurvey: boolean = true;
-  activateEurekaSurvey: boolean = true;
+
+  //SWE HEREEEE
+  activateEurekaSurvey: boolean = false;
 
   demoMode: boolean = false; // if true, then we're giving a live demo, so hide a bunch of excess stuff on page
 

@@ -14,7 +14,7 @@ import {pythonExamplesHtml,PY2_EXAMPLES,PY3_EXAMPLES,
         cppExamplesHtml,CPP_EXAMPLES,
         exampleHeaderHtml} from './example-links';
 import {footerHtml} from './footer-html';
-import {eureka_survey,eureka_prompt,eureka_survey_version} from './surveys';
+//import {eureka_survey,eureka_prompt,eureka_survey_version} from './surveys';
 
 require('./lib/jquery-3.0.0.min.js');
 require('./lib/jquery.qtip.js');
@@ -226,6 +226,7 @@ export class OptFrontendWithTestcases extends OptFrontendSharedSessions {
     this.prevExecutionRuntimeErrorCode = null;
 
     // put eureka_survey below #codAndNav so that it's highly visible:
+    /*
     if (this.activateEurekaSurvey) {
       this.myVisualizer.domRoot.find('#codAndNav').append(eureka_survey);
       this.myVisualizer.domRoot.find('#codAndNav #eureka_survey').css('margin-top', '30px'); // leave some extra space
@@ -246,7 +247,7 @@ export class OptFrontendWithTestcases extends OptFrontendSharedSessions {
           $.get('eureka_survey.py', myArgs, function(dat) {});
         }
       });
-    }
+    }*/
   }
 
   // called whenever myVisualizer.updateOutput() is called to update the visualization;

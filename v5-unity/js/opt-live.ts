@@ -127,6 +127,7 @@ export class OptLiveFrontend extends OptFrontendSharedSessions {
     });
 
     // put eureka_survey into #eurekaSurveyPane so that it's highly visible
+    /*
     $("#eurekaSurveyPane").append(eureka_survey);
     var that = this;
     $('.surveyBtnBig').click(function(e) {
@@ -144,7 +145,7 @@ export class OptLiveFrontend extends OptFrontendSharedSessions {
         (myArgs as any).session_uuid = that.sessionUUID;
         $.get('eureka_survey.py', myArgs, function(dat) {});
       }
-    });
+    }); */
   }
 
   demoModeChanged() {
