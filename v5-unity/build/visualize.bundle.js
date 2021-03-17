@@ -1332,7 +1332,7 @@ var DataVisualizer = (function () {
 		this.domRootD3 = domRootD3;
 		//asserting the working of cosole log in this file?
 		console.log("infrigginhere");
-        var codeVizHTML = "\n      <div id=\"dataViz\">\n         <table id=\"stackHeapTable\">\n           <tr>\n             <td id=\"stack_td\">\n               <div id=\"globals_area\">\n                 <div id=\"stackHeader\">" + this.getRealLabel("Frames") + "</div>\n               </div>\n               <div id=\"stack\"></div>\n             </td>\n             <td id=\"heap_td\">\n               <div id=\"heap\">\n                 <div id=\"heapHeader\">" + this.getRealLabel("Objects") + "</div>\n               </div>\n             </td>\n           </tr>\n         </table>\n       </div>";
+        var codeVizHTML = "\n      <div id=\"dataViz\">\n         <table id=\"stackHeapTable\">\n           <tr>\n             <td id=\"stack_td\">\n               <div id=\"globals_area\">\n                 <div id=\"stackHeader\">" + this.getRealLabel("Frames") + "</div>\n               </div>\n               <div id=\"stack\"></div>\n             </td>\n             <td id=\"heap_td\">\n               <div id=\"heap\">\n                 <div id=\"heapHeader\">" + this.getRealLabel("Objects") + " shit" + "</div>\n               </div>\n             </td>\n           </tr>\n         </table>\n       </div>";
         this.domRoot.append(codeVizHTML);
         // create a persistent globals frame
         // (note that we need to keep #globals_area separate from #stack for d3 to work its magic)
@@ -2037,7 +2037,29 @@ var DataVisualizer = (function () {
             .order() // VERY IMPORTANT to put in the order corresponding to data elements
             .each(function (varname, i) {
             if (i == 0) {
+				var clr = "transparent";
+				var val = curEntry.globals[varname];
+				console.log(val);
+				if (!(val instanceof Array)){
+					if(typeof(val) === "number" && val % 1 !== 0)
+						clr = "lightpink";
+					else if(typeof(val) === "number"){
+						console.log("remind");
+						console.log(val%1);
+						clr = "lightgreen";
+					}
+					
+					else if(typeof(val) === "string")
+						clr = "lightblue";
+					else if(typeof(val) === "boolean")
+						clr = "lightyellow";
+				}
+				else{
+					if(val[0] === "SPECIAL_FLOAT")
+						clr = "lightpink";
+				}
                 $(this).html(varname);
+				$(this).css("background-color", clr);
             }
             else {
                 // always delete and re-render the global var ...
@@ -2216,7 +2238,8 @@ var DataVisualizer = (function () {
         });
         var stackVarTableCells = stackVarTable
             .selectAll('td.stackFrameVar,td.stackFrameValue')
-            .data(function (d, i) { return [d, d] /* map identical data down both columns */; });
+            .data(function (d, i) { 
+				return [d, d] /* map identical data down both columns */; });
         stackVarTableCells.enter()
             .append('td')
             .attr('class', function (d, i) { return (i == 0) ? 'stackFrameVar' : 'stackFrameValue'; });
@@ -2228,8 +2251,10 @@ var DataVisualizer = (function () {
             if (i == 0) {
                 if (varname == '__return__')
                     $(this).html('<span class="retval">Return<br/>value</span>');
-                else
-                    $(this).html(varname);
+                else{
+					$(this).html(varname);
+				}
+                    
             }
             else {
                 // always delete and re-render the stack var ...
