@@ -24393,9 +24393,10 @@ var OptFrontend = (function (_super) {
         }
         else {
             $("#javaOptionsPane").hide();
-        }
+		}
+		//trying to hide the livemode btn
         if (selectorVal === 'js' || selectorVal === '2' || selectorVal === '3') {
-            $("#liveModeBtn").show();
+            $("#liveModeBtn").hide();
         }
         else {
             $("#liveModeBtn").hide();

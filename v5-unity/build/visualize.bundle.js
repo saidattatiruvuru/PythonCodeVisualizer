@@ -1329,14 +1329,16 @@ var DataVisualizer = (function () {
         this.params = this.owner.params;
         this.curTrace = this.owner.curTrace;
         this.domRoot = domRoot;
-        this.domRootD3 = domRootD3;
+		this.domRootD3 = domRootD3;
+		//asserting the working of cosole log in this file?
+		console.log("infrigginhere");
         var codeVizHTML = "\n      <div id=\"dataViz\">\n         <table id=\"stackHeapTable\">\n           <tr>\n             <td id=\"stack_td\">\n               <div id=\"globals_area\">\n                 <div id=\"stackHeader\">" + this.getRealLabel("Frames") + "</div>\n               </div>\n               <div id=\"stack\"></div>\n             </td>\n             <td id=\"heap_td\">\n               <div id=\"heap\">\n                 <div id=\"heapHeader\">" + this.getRealLabel("Objects") + "</div>\n               </div>\n             </td>\n           </tr>\n         </table>\n       </div>";
         this.domRoot.append(codeVizHTML);
         // create a persistent globals frame
         // (note that we need to keep #globals_area separate from #stack for d3 to work its magic)
         this.domRoot.find("#globals_area").append('<div class="stackFrame" id="'
             + this.owner.generateID('globals') + '"><div id="' + this.owner.generateID('globals_header')
-            + '" class="stackFrameHeader">' + this.getRealLabel('Global frame') + '</div><table class="stackFrameVarTable" id="'
+            + '" class="stackFrameHeader">' + this.getRealLabel('Global frame') + ' here' + '</div><table class="stackFrameVarTable" id="'
             + this.owner.generateID('global_table') + '"></table></div>');
         this.jsPlumbInstance = jsPlumb.getInstance({
             Endpoint: ["Dot", { radius: 3 }],
@@ -24393,9 +24395,10 @@ var OptFrontend = (function (_super) {
         }
         else {
             $("#javaOptionsPane").hide();
-        }
+		}
+		// hiding live btn
         if (selectorVal === 'js' || selectorVal === '2' || selectorVal === '3') {
-            $("#liveModeBtn").show();
+            $("#liveModeBtn").hide();
         }
         else {
             $("#liveModeBtn").hide();

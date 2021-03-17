@@ -24394,8 +24394,9 @@ var OptFrontend = (function (_super) {
         else {
             $("#javaOptionsPane").hide();
         }
+		//hide live button.. put show() instead
         if (selectorVal === 'js' || selectorVal === '2' || selectorVal === '3') {
-            $("#liveModeBtn").show();
+            $("#liveModeBtn").hide();
         }
         else {
             $("#liveModeBtn").hide();
