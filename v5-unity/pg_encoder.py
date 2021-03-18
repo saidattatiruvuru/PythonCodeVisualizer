@@ -277,11 +277,15 @@ class ObjectEncoder:
         func_name = get_name(dat)
 
         pretty_name = func_name
+        
 
         # sometimes might fail for, say, <genexpr>, so just ignore
         # failures for now ...
+
+        #this is what we removed
+        #pretty_name += '(' + ', '.join(printed_args) + ')'
         try:
-          pretty_name += '(' + ', '.join(printed_args) + ')'
+          pretty_name = ', '.join(printed_args) 
         except TypeError:
           pass
 
@@ -295,7 +299,7 @@ class ObjectEncoder:
             pretty_name += create_lambda_line_number(cod,
                                                      self.line_to_lambda_code)
 
-        encoded_val = ['FUNCTION', pretty_name, None]
+        encoded_val = ['FUNCTION', func_name, None , pretty_name]
         if get_parent:
           enclosing_frame_id = get_parent(dat)
           encoded_val[2] = enclosing_frame_id
