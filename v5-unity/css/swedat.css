@@ -1,4 +1,4 @@
-/*
+exports.push([module.i, "/*
 
 Online Python Tutor
 https://github.com/pgbovine/OnlinePythonTutor/
@@ -541,6 +541,7 @@ div.ExecutionVisualizer td.stackFrameVar {
   padding-right: 8px;
   padding-top: 3px;
   padding-bottom: 3px;
+  padding-left: 3px
 }
 
 div.ExecutionVisualizer td.stackFrameValue {
@@ -576,12 +577,6 @@ div.ExecutionVisualizer div#heap {
   float: left;
   padding-left: 30px;
 }
-
-div.ExecutionVisualizer div#funcPart {
-  float: left;
-  padding-left: 30px;
-}
-
 
 div.ExecutionVisualizer td.toplevelHeapObject {
   /* needed for d3 to do transitions */
@@ -619,9 +614,8 @@ div.ExecutionVisualizer div#heapHeader {
 }
 
 div.ExecutionVisualizer div#funcHeader {
-  margin-bottom: 15px;
-  text-align: right;
-}
+    margin-bottom: 15px;
+  }
 
 div.ExecutionVisualizer div#langDisplayDiv {
   text-align: center;
@@ -847,3 +841,4 @@ div.ExecutionVisualizer td.queueFElt table.dictTbl {
 }
 
 /* END Java frontend by David Pritchard and Will Gwozdz */
+", ""]);
