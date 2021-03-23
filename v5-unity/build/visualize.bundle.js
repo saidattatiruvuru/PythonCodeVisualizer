@@ -2145,9 +2145,6 @@ var DataVisualizer = (function () {
 
 		}
 
-
-
-
         // remember that the enter selection is added to the update
         // selection so that we can process it later ...
         // UPDATE
@@ -2168,10 +2165,17 @@ var DataVisualizer = (function () {
 				});
 				//var val = curEntry.globals[varname];
 				//myViz.renderNestedObject(val, curInstr, $(this));
-				if(ischanged === 0 )
+				if(ischanged === 0 ){
+					$(this).css("border", "0px");
 					$(this).html("");
-				else
-					myViz.renderNestedObject(val, curInstr-1, $(this));
+				}
+				else{
+						myViz.renderNestedObject(val, curInstr-1, $(this));
+						$(this).css("border", "0px");
+						$(this).css("border-bottom", "1px solid #aaaaaa");
+						$(this).css("border-right", "1px solid #aaaaaa");
+				}
+					
 			}
 
 
@@ -2204,6 +2208,20 @@ var DataVisualizer = (function () {
                 $(this).html(varname);
 				$(this).css("background-color", clr);
 
+				var ischanged = 0;
+				changedVars.forEach(function( namevar , i){
+					if(varname === namevar)
+					{
+						ischanged = 1;
+					}	
+				});
+				if(ischanged){
+					$(this).css("border", "2px solid black");
+					$(this).css("border-right", "0px");
+				}
+				else{
+					$(this).css("border", "0px");
+				}
 				//myViz.renderNestedObject(val, curInstr, $(this));
             }
             else {
@@ -2212,6 +2230,22 @@ var DataVisualizer = (function () {
                 // say -- $(this).attr('data-curvalue', valStringRepr) -- leads to
                 // a mysterious and killer memory leak that I can't figure out yet
                 $(this).empty();
+				var ischanged = 0;
+				changedVars.forEach(function( namevar , i){
+					if(varname === namevar)
+					{
+						ischanged = 1;
+					}	
+				});
+				if(ischanged){
+					$(this).css("border", "2px solid black");
+					$(this).css("border-left", "0px");
+				}
+				else{
+					$(this).css("border", "0px");
+					$(this).css("border-left", "1px solid #aaaaaa");
+					$(this).css("border-bottom", "1px solid #aaaaaa");
+				}
                 // make sure varname doesn't contain any weird
                 // characters that are illegal for CSS ID's ...
                 var varDivID = myViz.owner.generateID('global__' + varnameToCssID(varname));
@@ -2383,22 +2417,118 @@ var DataVisualizer = (function () {
 		});
 		//td.stackFramePrev,
         var stackVarTableCells = stackVarTable
-            .selectAll('td.stackFrameVar,td.stackFrameValue')
+            .selectAll('td.stackFramePrev,td.stackFrameVar,td.stackFrameValue')
             .data(function (d, i) { 
-				return [d, d] /* map identical data down both columns */; });
+				return [d, d, d] /* map identical data down both columns */; });
         stackVarTableCells.enter()
             .append('td')
-            .attr('class', function (d, i) { return (i == 0) ? 'stackFrameVar' : 'stackFrameValue'; });
+            .attr('class', function (d, i) { if(i === 0)
+				return 'stackFramePrev' ;
+			if(i === 1)
+				return 'stackFrameVar' ;
+			return 'stackFrameValue'; });
+
+		changedVars = [];
+		prevEntry = {};
+		if(curInstr > 0)
+		{
+			//curEntry = this.curTrace[curInstr];
+			var Prevno = this.curTrace[curInstr-1].stack_to_render.length;
+			var Curno = this.curTrace[curInstr].stack_to_render.length;
+			if(Prevno >= Curno && Curno>0){
+				//console.log("curno");
+				//console.log(Curno);
+				prevEntry = this.curTrace[curInstr-1].stack_to_render[Curno-1];
+				var prevLocals = this.curTrace[curInstr-1].stack_to_render[Curno-1].encoded_locals;
+				var curLocals = curEntry.stack_to_render[Curno-1];
+				curLocals = curLocals.encoded_locals;
+				$.each(prevLocals, function(i , variab){
+					if(JSON.stringify(curLocals[i] )!== JSON.stringify(variab))
+					{
+						console.log
+						console.log(variab);
+						changedVars.push(i);
+					}
+						
+				});
+			}	
+		}
+		//console.log("hereeeeeeeeerrrrrrr");
+		//console.log(changedVars);
+
         stackVarTableCells
             .order() // VERY IMPORTANT to put in the order corresponding to data elements
             .each(function (d, i) {
             var varname = d.varname;
             var frame = d.frame;
-            if (i == 0) {
+			$(this).html("");
+			if(i === 0 ){
+				if(!frame.is_highlighted){
+					return;
+				}
+				$(this).empty();
+				var ischanged = 0;
+				var val = [];
+				changedVars.forEach(function( namevar , i){
+					if(varname === namevar)
+					{
+						ischanged = 1;
+						val = prevEntry.encoded_locals[varname];
+					}
+						
+				});
+				if(ischanged === 0 ){
+					$(this).css("border", "0px");
+					$(this).html("");
+				}
+				else{
+						myViz.renderNestedObject(val, curInstr-1, $(this));
+						$(this).css("border", "0px");
+						$(this).css("border-bottom", "1px solid #aaaaaa");
+						$(this).css("border-right", "1px solid #aaaaaa");
+				}
+					
+			}
+            else if (i == 1) {
+				var clr = "transparent";
+				var val = frame.encoded_locals[varname];
+				if (!(val instanceof Array)){
+					if(typeof(val) === "number" && val % 1 !== 0)
+						clr = "lightpink";
+					else if(typeof(val) === "number"){
+						clr = "lightgreen";
+					}
+					
+					else if(typeof(val) === "string")
+						clr = "lightblue";
+					else if(typeof(val) === "boolean")
+						clr = "lightyellow";
+				}
+				else{
+					if(val[0] === "SPECIAL_FLOAT")
+						clr = "lightpink";
+					else if(val[0] === "REF")
+						clr = "orange";
+				}
                 if (varname == '__return__')
                     $(this).html('<span class="retval">Return<br/>value</span>');
                 else{
 					$(this).html(varname);
+					$(this).css("background-color", clr);
+					var ischanged = 0;
+					changedVars.forEach(function( namevar , i){
+						if(varname === namevar)
+						{
+							ischanged = 1;
+						}	
+					});
+					if(ischanged){
+						$(this).css("border", "2px solid black");
+						$(this).css("border-right", "0px solid black");
+					}
+					else{
+						$(this).css("border", "0px");
+					}
 				}
                     
             }
@@ -2442,6 +2572,22 @@ var DataVisualizer = (function () {
                         myViz.jsPlumbManager.connectionEndpointIDs.set(varDivID, heapObjID);
                     }
                 }
+				var ischanged = 0;
+					changedVars.forEach(function( namevar , i){
+						if(varname === namevar)
+						{
+							ischanged = 1;
+						}	
+					});
+					if(ischanged){
+						$(this).css("border", "2px solid black");
+						$(this).css("border-left", "0px");
+					}
+					else{
+						$(this).css("border", "0px");
+						$(this).css("border-left", "1px solid #aaaaaa");
+						$(this).css("border-bottom", "1px solid #aaaaaa");
+					}
             }
         });
         stackVarTableCells.exit()
@@ -2805,7 +2951,6 @@ var DataVisualizer = (function () {
     };
     DataVisualizer.prototype.renderNestedObject = function (obj, stepNum, d3DomElement) {
         if (this.isPrimitiveType(obj)) {
-			console.log("Heya");
             this.renderPrimitiveObject(obj, stepNum, d3DomElement);
         }
         else {
