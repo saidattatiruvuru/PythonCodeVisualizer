@@ -1856,7 +1856,7 @@ var DataVisualizer = (function () {
 		var x = space;
 		if(l < space + 3 || space === -1)
 			return -1
-		else if(str[space]==='i' && str[space+1]==='f')
+		else if(str[space]==='i' && str[space+1]==='f'&& (str[space+2]===' ' || str[space+2]==='('))
 			return space;
 		return -1;
 	}
@@ -1865,9 +1865,9 @@ var DataVisualizer = (function () {
 		var l = str.length;
 		var space = spaceCount(str);
 		var x = space;
-		if(l < space + 3 || space === -1)
+		if(l < space + 4 || space === -1)
 			return -1
-		else if(str[space]==='i' && str[space+1]==='f')
+		else if(str[space]==='f' && str[space+1]==='o' && str[space+2]==='r' && str[space+3]===' ')
 			return space;
 		return -1;
 	}
@@ -1889,10 +1889,22 @@ var DataVisualizer = (function () {
 		var curSpace = spaceCount(curInstLine);
 		if(curSpace === 0)
 		{
-			if(ifDetect(curInstLine) == -1)
+			if(ifDetect(curInstLine) === -1)
 				{
-					return;
+					if(forDetect(curInstLine) === -1)
+					{
+						return;
+					}
+
+					else
+					{
+						var temp={'flowType':'FOR', 'frontSpace':curSpace, 'text':curInstLine,'instNo':curInstr };
+						scopeStack.push(temp);
+					}
 				}
+
+			
+
 			else
 			{
 				var temp={'flowType':'IF', 'frontSpace':curSpace, 'text':curInstLine, 'isTaken':'nyet' , 'instNo':curInstr };
@@ -1908,6 +1920,13 @@ var DataVisualizer = (function () {
 				var temp={'flowType':'IF', 'frontSpace':curSpace, 'text':curInstLine, 'isTaken':'nyet' , 'instNo':curInstr };
 				scopeStack.push(temp);
 			}
+
+			if(forDetect(curInstLine) !== -1)
+			{
+				var temp={'flowType':'FOR', 'frontSpace':curSpace, 'text':curInstLine, 'instNo':curInstr };
+				scopeStack.push(temp);
+			}
+
 			for(i ; i>0 ; i--)
 			{
 				//curSpace =0 break
@@ -1922,6 +1941,7 @@ var DataVisualizer = (function () {
 				}
 				var prevInstLine = curCode[curTrace[i-1]['line']-1]['text'];
 				var prevIfNum = ifDetect(prevInstLine);
+				var prevForNum = forDetect(prevInstLine);
 				if(prevIfNum !== -1)
 				{
 					var isTaken = 'nyet';
@@ -1933,6 +1953,15 @@ var DataVisualizer = (function () {
 						isTaken = false;
 					}
 					var temp={'flowType':'IF', 'frontSpace':prevIfNum, 'text':prevInstLine, 'isTaken':isTaken , 'instNo':i-1 };
+					if(scopeStack.length > 0 && scopeStack[scopeStack.length-1]['frontSpace']> temp['frontSpace'] ||scopeStack.length===0)
+					{	scopeStack.push(temp);
+					}
+
+				}
+
+				if(prevForNum !== -1)
+				{
+					var temp={'flowType':'FOR', 'frontSpace':prevForNum, 'text':prevInstLine, 'instNo':i-1 };
 					if(scopeStack.length > 0 && scopeStack[scopeStack.length-1]['frontSpace']> temp['frontSpace'] ||scopeStack.length===0)
 					{	scopeStack.push(temp);
 					}
