@@ -1838,7 +1838,117 @@ var DataVisualizer = (function () {
             // non-objects are primitives
             return true;
         }
-    };
+	};
+
+	//To return the preceding space count
+	var spaceCount = function(str){
+		var l = str.length;
+		var x = 0;
+		for( x; x<l && str[x]==' ' ; x++);
+		if(l==x)
+			return -1;
+		return x;
+	}
+
+	var ifDetect =	function(str){
+		var l = str.length;
+		var space = spaceCount(str);
+		var x = space;
+		if(l < space + 3 || space === -1)
+			return -1
+		else if(str[space]==='i' && str[space+1]==='f')
+			return space;
+		return -1;
+	}
+
+	var forDetect =	function(str){
+		var l = str.length;
+		var space = spaceCount(str);
+		var x = space;
+		if(l < space + 3 || space === -1)
+			return -1
+		else if(str[space]==='i' && str[space+1]==='f')
+			return space;
+		return -1;
+	}
+	
+	DataVisualizer.prototype.renderFlowStructures = function (curInstr) {
+		//To render ifs and fors
+
+		var myViz = this; // to prevent confusion of 'this' inside of nested functions
+		//this is ours!!! swedata!!!!
+		var prevLine = this.owner.prevLineNumber;
+		var curCode = this.owner.codeOutputLines;
+		var curThing = this.curTrace[curInstr].heap;
+		var curEntry = this.curTrace[curInstr];
+		var curTrace = this.owner.curTrace;
+		var scopeStack = [];		
+		var curInstLine= curCode[curTrace[curInstr]['line']-1]['text'];
+		// {flowType: , frontspace: , text: , isTaken: , instNo:}
+		//in current instruction, if there's not preceding space and if the istruction is not IF, totally return
+		var curSpace = spaceCount(curInstLine);
+		if(curSpace === 0)
+		{
+			if(ifDetect(curInstLine) == -1)
+				{
+					return;
+				}
+			else
+			{
+				var temp={'flowType':'IF', 'frontSpace':curSpace, 'text':curInstLine, 'isTaken':'nyet' , 'instNo':curInstr };
+				scopeStack.push(temp);
+			}	
+		}
+		else
+		{
+			var i = curInstr;
+			
+			if(ifDetect(curInstLine) !== -1)
+			{
+				var temp={'flowType':'IF', 'frontSpace':curSpace, 'text':curInstLine, 'isTaken':'nyet' , 'instNo':curInstr };
+				scopeStack.push(temp);
+			}
+			for(i ; i>0 ; i--)
+			{
+				//curSpace =0 break
+				//see if prev instr was if
+				//YES? push to stack, isTaken= prevInstLine = curInstLine-1? True:False
+				//NO? move forward..backward.. along the flow!!!!!
+				curInstLine= curCode[curTrace[i]['line']-1]['text'];
+				curSpace = spaceCount(curInstLine);
+				if(curSpace === 0)
+				{
+					break;
+				}
+				var prevInstLine = curCode[curTrace[i-1]['line']-1]['text'];
+				var prevIfNum = ifDetect(prevInstLine);
+				if(prevIfNum !== -1)
+				{
+					var isTaken = 'nyet';
+					if(curTrace[i-1]['line']=== curTrace[i]['line']-1)
+					{
+						isTaken = true;
+					}
+					else{
+						isTaken = false;
+					}
+					var temp={'flowType':'IF', 'frontSpace':prevIfNum, 'text':prevInstLine, 'isTaken':isTaken , 'instNo':i-1 };
+					if(scopeStack.length > 0 && scopeStack[scopeStack.length-1]['frontSpace']> temp['frontSpace'] ||scopeStack.length===0)
+					{	scopeStack.push(temp);
+					}
+
+				}
+			}
+
+		}
+		console.log("SCOPESTACK!!!");
+		console.log(scopeStack);
+
+
+
+		
+	}
+
     // This is the main event right here!!!
     //
     // The "4.0" version of renderDataStructures was refactored to be much
@@ -1873,7 +1983,7 @@ var DataVisualizer = (function () {
 		//this is ours!!! swedata!!!!
 		var curThing = this.curTrace[curInstr].heap;
 		var curEntry = this.curTrace[curInstr];
-		
+		myViz.renderFlowStructures(curInstr);		
 
 
 
