@@ -1972,6 +1972,7 @@ var DataVisualizer = (function () {
 			return true;
 		}
 		var done = populateSS();
+		scopeStack.reverse();
 
 		myViz.domRoot.find('#flow')
             .empty()
@@ -1995,7 +1996,56 @@ var DataVisualizer = (function () {
 				console.log("inside flowTable");
 				console.log(i);
 				$(this).empty();
-				$(this).html(i.text);
+				if(i.flowType === 'IF')
+				{
+					var tempStr = i.text;
+					var l = tempStr.length;
+					tempStr = tempStr.substring( i.frontSpace , l);
+					$(this).css("background-color", "papayawhip");
+					$(this).css("text-align", "center");
+					$(this).append("<div style=\"font-size:16px;padding:10px; padding-bottom:0px;min-width:100px\"><b>"+ tempStr + "</b></div>");
+					if(i.isTaken === 'nyet')
+						$(this).append("<div style=\"background-color:lightgrey;margin:10px;padding:5px;\">Not Yet</div>");
+					else if(i.isTaken)
+						$(this).append("<div style=\"background-color:lightgreen;margin:10px;padding:5px;\">TAKEN</div>");
+					else
+						$(this).append("<div style=\"background-color:lightsalmon;margin:10px;padding:5px;\">NOT TAKEN</div>");
+
+
+				}
+
+				if(i.flowType === 'FOR')
+				{
+					$(this).css("background-color", "plum");
+					$(this).css("text-align", "center");
+					var tempStr = i.text;
+					var l = tempStr.length;
+					tempStr = tempStr.substring( i.frontSpace + 3 , l-1);
+					$(this).append("<div style=\"font-size:16px;padding:10px; padding-bottom:0px;min-width:100px\"><b>"+ tempStr + "</b></div>");
+					var x = tempStr.split(" in");
+					x = x[0].replace(' ', '');
+					x = x.split(',');
+
+					var domelement = $(this);
+
+					$(x).each(function(ind, varname){
+						
+						var varP = curEntry.globals[varname];
+						if(varP !== undefined)
+						{
+							$(this).append("<div style=\"font-size:16px;padding:10px; padding-bottom:0px;\"><b>" + varname + "</b></div>");
+							myViz.renderNestedObject(varP, curInstr, domelement);}
+					});
+
+					console.log("the split");
+					console.log(x)
+
+					
+
+
+				}
+
+				
 			});
 
 		flowTable.exit()
