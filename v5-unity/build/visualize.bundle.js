@@ -1900,13 +1900,13 @@ var DataVisualizer = (function () {
 
 						else
 						{
-							var temp={'flowType':'FOR', 'frontSpace':curSpace, 'text':curInstLine,'instNo':curInstr };
+							var temp={'flowType':'FOR', 'frontSpace':curSpace, 'text':curInstLine,'instNo':curInstr , 'line':curTrace[curInstr]['line']};
 							scopeStack.push(temp);
 						}
 					}
 				else
 				{
-					var temp={'flowType':'IF', 'frontSpace':curSpace, 'text':curInstLine, 'isTaken':'nyet' , 'instNo':curInstr };
+					var temp={'flowType':'IF', 'frontSpace':curSpace, 'text':curInstLine, 'isTaken':'nyet' , 'instNo':curInstr , 'line':curTrace[curInstr]['line']};
 					scopeStack.push(temp);
 				}	
 			}
@@ -1916,13 +1916,13 @@ var DataVisualizer = (function () {
 				
 				if(ifDetect(curInstLine) !== -1)
 				{
-					var temp={'flowType':'IF', 'frontSpace':curSpace, 'text':curInstLine, 'isTaken':'nyet' , 'instNo':curInstr };
+					var temp={'flowType':'IF', 'frontSpace':curSpace, 'text':curInstLine, 'isTaken':'nyet' , 'instNo':curInstr , 'line':curTrace[curInstr]['line']};
 					scopeStack.push(temp);
 				}
 
 				if(forDetect(curInstLine) !== -1)
 				{
-					var temp={'flowType':'FOR', 'frontSpace':curSpace, 'text':curInstLine, 'instNo':curInstr };
+					var temp={'flowType':'FOR', 'frontSpace':curSpace, 'text':curInstLine, 'instNo':curInstr , 'line':curTrace[curInstr]['line']};
 					scopeStack.push(temp);
 				}
 
@@ -1951,7 +1951,7 @@ var DataVisualizer = (function () {
 						else{
 							isTaken = false;
 						}
-						var temp={'flowType':'IF', 'frontSpace':prevIfNum, 'text':prevInstLine, 'isTaken':isTaken , 'instNo':i-1 };
+						var temp={'flowType':'IF', 'frontSpace':prevIfNum, 'text':prevInstLine, 'isTaken':isTaken , 'instNo':i-1 , 'line':curTrace[i-1]['line'] };
 						if(scopeStack.length > 0 && scopeStack[scopeStack.length-1]['frontSpace']> temp['frontSpace'] ||scopeStack.length===0)
 						{	scopeStack.push(temp);
 						}
@@ -1960,7 +1960,7 @@ var DataVisualizer = (function () {
 
 					if(prevForNum !== -1)
 					{
-						var temp={'flowType':'FOR', 'frontSpace':prevForNum, 'text':prevInstLine, 'instNo':i-1 };
+						var temp={'flowType':'FOR', 'frontSpace':prevForNum, 'text':prevInstLine, 'instNo':i-1 , 'line':curTrace[i-1]['line'] };
 						if(scopeStack.length > 0 && scopeStack[scopeStack.length-1]['frontSpace']> temp['frontSpace'] ||scopeStack.length===0)
 						{	scopeStack.push(temp);
 						}
@@ -1969,9 +1969,54 @@ var DataVisualizer = (function () {
 				}
 
 			}
+
+			var i  = curInstr -1;
+			var scopeindex = -1;
+			var s = 0;
+			var l = scopeStack.length;
+			var forcount = 0;
+			for(s ; s<l; s++){
+				if(scopeStack[s]['flowType'] === 'FOR'){
+					scopeindex = s;
+					break;
+				}
+					
+			}
+			console.log("length   " + l.toString());
+			if(scopeindex > -1){
+
+				for(i ; i>=0 ; i--){
+					/*console.log("loop   " + i.toString());
+					console.log(scopeStack[scopeindex]['text'].toString()+"    "+scopeStack[scopeindex]['line'].toString()+"     "+(curTrace[i]['line']-1).toString());
+					*/
+					if(scopeStack[scopeindex]['line'] === curTrace[i]['line'] ){
+
+						forcount++;
+					}
+					else if(scopeindex+1 < l && (scopeStack[scopeindex+1]['line'] === curTrace[i]['line'] )){
+/*
+						console.log("iter entry")
+						console.log(scopeStack[scopeindex]['text'])
+						console.log(forcount)
+						*/
+						scopeStack[scopeindex]['iter'] = forcount;
+						scopeindex += 1;
+						forcount = 1;
+					}
+				
+				}
+				if (scopeindex<l){
+					/*console.log("iter entry")
+					console.log(scopeStack[scopeindex]['text'])
+					console.log(forcount)*/
+					scopeStack[scopeindex]['iter'] = forcount;
+				}
+			}
+			
 			return true;
 		}
 		var done = populateSS();
+
 		scopeStack.reverse();
 
 		myViz.domRoot.find('#flow')
@@ -1992,10 +2037,13 @@ var DataVisualizer = (function () {
 
 		flowTable
             .order() // VERY IMPORTANT to put in the order corresponding to data elements
-            .each(function (i) {
-				console.log("inside flowTable");
-				console.log(i);
+            .each(function (i, index){
 				$(this).empty();
+
+				if(index === scopeStack.length - 1){
+					console.log("in hereeeeeeeeerrrrrrr")
+					$(this).css("border", "3px solid #aaaaaa");	
+				}
 				if(i.flowType === 'IF')
 				{
 					var tempStr = i.text;
@@ -2021,28 +2069,26 @@ var DataVisualizer = (function () {
 					var tempStr = i.text;
 					var l = tempStr.length;
 					tempStr = tempStr.substring( i.frontSpace + 3 , l-1);
-					$(this).append("<div style=\"font-size:16px;padding:10px; padding-bottom:0px;min-width:100px\"><b>"+ tempStr + "</b></div>");
+					$(this).append("<div style=\"font-size:10px;padding-top:5px;min-width:100px\">"+"For Loop"+ "</div>");
+					$(this).append("<div style=\"font-size:16px;padding-bottom:5px;min-width:100px\"><b>"+ tempStr + "</b></div>");
 					var x = tempStr.split(" in");
-					x = x[0].replace(' ', '');
+					x = x[0].replaceAll(' ', '');
 					x = x.split(',');
-
+					if(i.iter !== 0 ){
+						$(this).append("<div style=\"font-size:10px;padding-bottom:5px;min-width:100px\">"+"Iteration : " + i.iter.toString() + "</div>");
+					
+					}
+					
+/*
 					var domelement = $(this);
-
 					$(x).each(function(ind, varname){
 						
 						var varP = curEntry.globals[varname];
 						if(varP !== undefined)
 						{
-							$(this).append("<div style=\"font-size:16px;padding:10px; padding-bottom:0px;\"><b>" + varname + "</b></div>");
+							domelement.append("<div style=\"font-size:16px;padding:10px; padding-bottom:0px;\"><b>" + varname + "</b></div>");
 							myViz.renderNestedObject(varP, curInstr, domelement);}
-					});
-
-					console.log("the split");
-					console.log(x)
-
-					
-
-
+					});*/
 				}
 
 				
@@ -2056,7 +2102,8 @@ var DataVisualizer = (function () {
         
 
 		console.log("SCOPESTACK!!!");
-		console.log(scopeStack);		
+		console.log(scopeStack);
+		console.log(curTrace);		
 	}
 
     // This is the main event right here!!!
