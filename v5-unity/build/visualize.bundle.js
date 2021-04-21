@@ -721,8 +721,8 @@ var ExecutionVisualizer = (function () {
         this.domRoot.find('#vizLayoutTdFirst').append('<div id="codAndNav" style="width: 550px;"/>');
         var base = this.domRoot.find('#vizLayoutTdFirst #codAndNav');
         var baseD3 = this.domRootD3.select('#vizLayoutTdFirst #codAndNav');
-        this.codDisplay = new CodeDisplay(this, base, baseD3, this.curInputCode, this.params.lang, this.params.editCodeBaseURL);
         this.navControls = new NavigationController(this, base, baseD3, this.curTrace.length);
+        this.codDisplay = new CodeDisplay(this, base, baseD3, this.curInputCode, this.params.lang, this.params.editCodeBaseURL);
         if (this.params.embeddedMode) {
             // don't override if they've already been set!
             if (this.params.codeDivWidth === undefined) {
@@ -1322,12 +1322,14 @@ ExecutionVisualizer.DEFAULT_EMBEDDED_CODE_DIV_WIDTH = 350;
 ExecutionVisualizer.DEFAULT_EMBEDDED_CODE_DIV_HEIGHT = 400;
 exports.ExecutionVisualizer = ExecutionVisualizer;
 // implements the data structure visualization for an entire trace
+var GlobalDVplumber
 var DataVisualizer = (function () {
     function DataVisualizer(owner, domRoot, domRootD3) {
         this.classAttrsHidden = {}; // kludgy hack for 'show/hide attributes' for class objects
         this.owner = owner;
         this.params = this.owner.params;
         this.curTrace = this.owner.curTrace;
+        this.codeOutputLines = this.owner.codeOutputLines;
         this.domRoot = domRoot;
 		this.domRootD3 = domRootD3;
 		//asserting the working of cosole log in this file?
@@ -1354,6 +1356,7 @@ var DataVisualizer = (function () {
             EndpointHoverStyles: [{ fillStyle: connectorHighlightColor }, { fillstyle: null } /* make right endpoint invisible */],
             HoverPaintStyle: { lineWidth: 1, strokeStyle: connectorHighlightColor },
         });
+        GlobalDVplumber = this.jsPlumbInstance;
     }
     DataVisualizer.prototype.height = function () {
         return this.domRoot.find('#dataViz').height();
@@ -1993,8 +1996,9 @@ var DataVisualizer = (function () {
 
 						forcount++;
 					}
-					else if(scopeindex+1 < l && (scopeStack[scopeindex+1]['line'] === curTrace[i]['line'] )){
-/*
+					else if(scopeindex+1 < l && (scopeStack[scopeindex+1]['line'] === curTrace[i]['line'] ))
+					{
+						/*
 						console.log("iter entry")
 						console.log(scopeStack[scopeindex]['text'])
 						console.log(forcount)
@@ -2079,7 +2083,7 @@ var DataVisualizer = (function () {
 					
 					}
 					
-/*
+					/*
 					var domelement = $(this);
 					$(x).each(function(ind, varname){
 						
@@ -2285,7 +2289,7 @@ var DataVisualizer = (function () {
             }
 		});
 		
-//OUR FUNC THINGY
+		//OUR FUNC THINGY
 		toplevelFuncObjects
             .order() // VERY IMPORTANT to put in the order corresponding to data elements
             .each(function (objID, i) {
@@ -2344,7 +2348,6 @@ var DataVisualizer = (function () {
 
 
 		myViz.renderFlowStructures(curInstr);		
-
         // TODO: coalesce code for rendering globals and stack frames,
         // since there's so much copy-and-paste grossness right now
         // render all global variables IN THE ORDER they were created by the program,
@@ -3839,8 +3842,10 @@ var CodeDisplay = (function () {
             }
         }
     }
+
     CodeDisplay.prototype.renderPyCodeOutput = function () {
         var _this = this;
+        var myViz = this.owner;
         var myCodOutput = this; // capture
         this.domRoot.find('#pyCodeOutputDiv').empty();
         // maps codeOutputLines down both table columns
@@ -3851,6 +3856,9 @@ var CodeDisplay = (function () {
             .selectAll('tr')
             .data(this.owner.codeOutputLines)
             .enter().append('tr')
+            .attr('id', function(d, i ){
+            	return "coderowtrid__" + (i+1).toString();
+            })
             .selectAll('td')
             .data(function (d, i) { return [d, d] /* map full data item down both columns */; })
             .enter().append('td')
@@ -3876,12 +3884,14 @@ var CodeDisplay = (function () {
         })
             .html(function (d, i) {
             if (i == 0) {
-                return d.lineNumber;
+                return "<div>" + d.lineNumber.toString() + "</div>";
             }
             else {
                 return htmlspecialchars(d.text);
             }
         });
+
+
         // create a left-most gutter td that spans ALL rows ...
         // (NB: valign="top" is CRUCIAL for this to work in IE)
         this.domRoot.find('#pyCodeOutput tr:first')
@@ -3935,6 +3945,39 @@ var CodeDisplay = (function () {
         var _this = this;
         if (smoothTransition === void 0) { smoothTransition = false; }
         var gutterSVG = this.domRoot.find('svg#leftCodeGutterSVG');
+
+
+        var myViz = this.owner;
+        var freqList = [];
+		//var colorList = ['lightgrey', '#ffaa00', '#ffcc66',  '#ffa64d', '#ff8c1a', '#ff8533', '#ff6600','#ff5c33', '#ff3300', '#e62e00', '#e60000'];
+		var colorList = ['lightgrey', '#FFEE00', '#FBB806', '#F6830C', '#F24D11', '#ED1717']
+		var colornum = colorList.length - 1;
+        var length = myViz.codeOutputLines.length;
+        for (var i = 0 ; i<length; i++){
+        	freqList.push(0);
+        }
+        var curInstr = myViz.curInstr;
+        var curTrace = myViz.curTrace;
+        var maxFreq = 0
+        for (var i = 0 ; i<= curInstr; i++){
+        	var lineno = curTrace[i].line - 1;
+        	freqList[lineno] += 1;
+        	if(freqList[lineno] > maxFreq){
+        		maxFreq = freqList[lineno];
+        	}
+        }
+
+        for (var j = 0; j<length; j++){
+        	var c = freqList[j];
+        	if(maxFreq > colornum){
+        		c = Math.ceil((c/maxFreq)*colornum);
+        	}
+        	var findable = 'table#pyCodeOutput td#lineNo' + (j+1).toString();
+        	this.domRoot.find(findable).css('color', colorList[c]);
+
+        }
+
+
         // one-time initialization of the left gutter
         // (we often can't do this earlier since the entire pane
         //  might be invisible and hence returns a height of zero or NaN
