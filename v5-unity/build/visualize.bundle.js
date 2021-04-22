@@ -1843,7 +1843,7 @@ var DataVisualizer = (function () {
         }
 	};
 
-	//To return the preceding space count
+	//To return the preceding space count in a given line
 	var spaceCount = function(str){
 		var l = str.length;
 		var x = 0;
@@ -1853,6 +1853,9 @@ var DataVisualizer = (function () {
 		return x;
 	}
 
+	//function to detect if the codeline is the start of an if condition
+	//returns the front space (python indentation) if it is indeed an 'IF'
+	//otherwise returns -1
 	var ifDetect =	function(str){
 		var l = str.length;
 		var space = spaceCount(str);
@@ -1864,6 +1867,9 @@ var DataVisualizer = (function () {
 		return -1;
 	}
 
+	//similarly, a function to detect if the codeline is the start of a for loop
+	//returns the front space (python indentation) if it is indeed an 'FOR'
+	//otherwise returns -1
 	var forDetect =	function(str){
 		var l = str.length;
 		var space = spaceCount(str);
@@ -1888,12 +1894,14 @@ var DataVisualizer = (function () {
 		var curTrace = this.owner.curTrace;
 		var scopeStack = [];		
 		var curInstLine= curCode[curTrace[curInstr]['line']-1]['text'];
-		// {flowType: , frontspace: , text: , isTaken: , instNo:}
+		// each entry of scopeStack-> {flowType: , frontspace: , text: , isTaken: , instNo:, line}
 		//in current instruction, if there's not preceding space and if the istruction is not IF, totally return
 		var curSpace = spaceCount(curInstLine);
 		var populateSS = function() {
 			if(curSpace === 0)
 			{
+				// the global scope case
+				// hence the current line is an outermost if/for or a normal statement
 				if(ifDetect(curInstLine) === -1)
 					{
 						if(forDetect(curInstLine) === -1)
@@ -1915,16 +1923,19 @@ var DataVisualizer = (function () {
 			}
 			else
 			{
+				//the case where the current indentation signifies it is not the global scope
 				var i = curInstr;
 				
 				if(ifDetect(curInstLine) !== -1)
 				{
+					//detecting the IF in the current line
 					var temp={'flowType':'IF', 'frontSpace':curSpace, 'text':curInstLine, 'isTaken':'nyet' , 'instNo':curInstr , 'line':curTrace[curInstr]['line']};
 					scopeStack.push(temp);
 				}
 
 				if(forDetect(curInstLine) !== -1)
 				{
+					//determining the FOR in the current line
 					var temp={'flowType':'FOR', 'frontSpace':curSpace, 'text':curInstLine, 'instNo':curInstr , 'line':curTrace[curInstr]['line']};
 					scopeStack.push(temp);
 				}
@@ -1933,12 +1944,14 @@ var DataVisualizer = (function () {
 				{
 					//curSpace =0 break
 					//see if prev instr was if
-					//YES? push to stack, isTaken= prevInstLine = curInstLine-1? True:False
+					//YES? push to stack, isTaken= (prevInstLine == curInstLine-1? True:False)
+					// the IF is taken only if the line immediately after this IF is executed
 					//NO? move forward..backward.. along the flow!!!!!
 					curInstLine= curCode[curTrace[i]['line']-1]['text'];
 					curSpace = spaceCount(curInstLine);
 					if(curSpace === 0)
 					{
+						//if the global scope is reached, then break
 						break;
 					}
 					var prevInstLine = curCode[curTrace[i-1]['line']-1]['text'];
@@ -1946,9 +1959,11 @@ var DataVisualizer = (function () {
 					var prevForNum = forDetect(prevInstLine);
 					if(prevIfNum !== -1)
 					{
-						var isTaken = 'nyet';
+						//if the previous line is IF
+						var isTaken = 'nyet';		//setting a default value to denote that whether taken or not taken is not decided yet
 						if(curTrace[i-1]['line']=== curTrace[i]['line']-1)
 						{
+							//if current line is the immediate line after IF, the IF has been taken
 							isTaken = true;
 						}
 						else{
@@ -1956,7 +1971,11 @@ var DataVisualizer = (function () {
 						}
 						var temp={'flowType':'IF', 'frontSpace':prevIfNum, 'text':prevInstLine, 'isTaken':isTaken , 'instNo':i-1 , 'line':curTrace[i-1]['line'] };
 						if(scopeStack.length > 0 && scopeStack[scopeStack.length-1]['frontSpace']> temp['frontSpace'] ||scopeStack.length===0)
-						{	scopeStack.push(temp);
+						{	
+							//push to scopestack only if it is a currently 'open' if
+							//i.e., it is the lowermost if with the current indendation 
+							//which would imply this IF has not finished executing
+							scopeStack.push(temp);
 						}
 
 					}
@@ -1965,7 +1984,9 @@ var DataVisualizer = (function () {
 					{
 						var temp={'flowType':'FOR', 'frontSpace':prevForNum, 'text':prevInstLine, 'instNo':i-1 , 'line':curTrace[i-1]['line'] };
 						if(scopeStack.length > 0 && scopeStack[scopeStack.length-1]['frontSpace']> temp['frontSpace'] ||scopeStack.length===0)
-						{	scopeStack.push(temp);
+						{	
+							//push this FOR to scopestack only if it is a currently open FOR
+							scopeStack.push(temp);
 						}
 
 					}
@@ -1978,6 +1999,8 @@ var DataVisualizer = (function () {
 			var s = 0;
 			var l = scopeStack.length;
 			var forcount = 0;
+
+			//finding the newest open FOR
 			for(s ; s<l; s++){
 				if(scopeStack[s]['flowType'] === 'FOR'){
 					scopeindex = s;
@@ -1986,22 +2009,24 @@ var DataVisualizer = (function () {
 					
 			}
 			console.log("length   " + l.toString());
+
+			//the following code is to find the iteration number of each open FOR
 			if(scopeindex > -1){
 
-				for(i ; i>=0 ; i--){
-					/*console.log("loop   " + i.toString());
-					console.log(scopeStack[scopeindex]['text'].toString()+"    "+scopeStack[scopeindex]['line'].toString()+"     "+(curTrace[i]['line']-1).toString());
+				/*only if there is at least 1 FOR
+				traversing the current python trace from the current instruction number
 					*/
+				for(i ; i>=0 ; i--){
+					
 					if(scopeStack[scopeindex]['line'] === curTrace[i]['line'] ){
-
+						// if the current code element matches with the current scopestack element's line
+						//P.S: we are checking the actual code line number, not the indentation to be correct
 						forcount++;
 					}
 					else if(scopeindex+1 < l && (scopeStack[scopeindex+1]['line'] === curTrace[i]['line'] ))
 					{
 						/*
-						console.log("iter entry")
-						console.log(scopeStack[scopeindex]['text'])
-						console.log(forcount)
+						if the current line matched the next element of scopestack, the current scopestack element's iteration has finished. Hence we store the count and move on to this next scopestack element
 						*/
 						scopeStack[scopeindex]['iter'] = forcount;
 						scopeindex += 1;
@@ -2010,9 +2035,9 @@ var DataVisualizer = (function () {
 				
 				}
 				if (scopeindex<l){
-					/*console.log("iter entry")
-					console.log(scopeStack[scopeindex]['text'])
-					console.log(forcount)*/
+					/*
+					the edgecase where there is no next scopestack element and hence the count wasnt stored inside the for loop
+					*/
 					scopeStack[scopeindex]['iter'] = forcount;
 				}
 			}
@@ -2023,6 +2048,8 @@ var DataVisualizer = (function () {
 
 		scopeStack.reverse();
 
+		//finding the already appended 'flow' column of the execution visualization table
+		//and clearing it
 		myViz.domRoot.find('#flow')
             .empty()
             .html("<div id=\"funcHeader\">" + "FOR & IF" + "</div>");
@@ -2048,8 +2075,12 @@ var DataVisualizer = (function () {
 					console.log("in hereeeeeeeeerrrrrrr")
 					$(this).css("border", "3px solid #aaaaaa");	
 				}
+				
+				
+				//the IF statements rendering
 				if(i.flowType === 'IF')
 				{
+					
 					var tempStr = i.text;
 					var l = tempStr.length;
 					tempStr = tempStr.substring( i.frontSpace , l);
@@ -2066,6 +2097,7 @@ var DataVisualizer = (function () {
 
 				}
 
+				//the FOR loop rendering
 				if(i.flowType === 'FOR')
 				{
 					$(this).css("background-color", "plum");
@@ -2083,16 +2115,6 @@ var DataVisualizer = (function () {
 					
 					}
 					
-					/*
-					var domelement = $(this);
-					$(x).each(function(ind, varname){
-						
-						var varP = curEntry.globals[varname];
-						if(varP !== undefined)
-						{
-							domelement.append("<div style=\"font-size:16px;padding:10px; padding-bottom:0px;\"><b>" + varname + "</b></div>");
-							myViz.renderNestedObject(varP, curInstr, domelement);}
-					});*/
 				}
 
 				
@@ -2103,11 +2125,7 @@ var DataVisualizer = (function () {
             $(this).empty(); // crucial for garbage collecting jsPlumb connectors!
         })
             .remove();
-        
-
-		console.log("SCOPESTACK!!!");
-		console.log(scopeStack);
-		console.log(curTrace);		
+        	
 	}
 
     // This is the main event right here!!!
@@ -2188,6 +2206,8 @@ var DataVisualizer = (function () {
         // transitions or efficient updates. but it provides more
         // deterministic and predictable output for other functions. sigh, i'm
 		// not really using d3 to the fullest, but oh wells!
+
+		//added for the function part
 		myViz.domRoot.find('#funcPart')
             .empty()
             .html("<div id=\"funcHeader\">" + "Classes & Functions" + "</div>");
@@ -2202,7 +2222,7 @@ var DataVisualizer = (function () {
             return objLst[0]; // return first element, which is the row ID tag
 		});
 		
-
+		//added for the function part
 		var funcRows = myViz.domRootD3.select('#funcPart')
             .selectAll('table.heapRow')
             .attr('id', function (d, i) { return 'heapRow' + i; }) // add unique ID
@@ -2216,7 +2236,7 @@ var DataVisualizer = (function () {
             .attr('id', function (d, i) { return 'heapRow' + i; }) // add unique ID
 			.attr('class', 'heapRow');
 			
-
+		//creating row entries for each function
 		funcRows.enter().append('table')
             .attr('id', function (d, i) { return 'heapRow' + i; }) // add unique ID
             .attr('class', 'heapRow');
@@ -2231,7 +2251,7 @@ var DataVisualizer = (function () {
         })
 			.remove();
 			
-
+		//to exit the func rows
 		var frExit = heapRows.exit();
 			frExit
 				.each(function (d, idx) {
@@ -2283,7 +2303,8 @@ var DataVisualizer = (function () {
                 if (curEntry.heap[objID] !== undefined) {
                     myViz.renderCompoundObject(objID, curInstr, $(this), true);
                 }
-            }
+			}
+			//donot render the functions and class definitions in the heap since we have a separate portion just for that
             else if (curThing[objID][0] !== "FUNCTION" && curThing[objID][0] !== "CLASS" ) {
                 myViz.renderCompoundObject(objID, curInstr, $(this), true);
             }
@@ -2293,10 +2314,8 @@ var DataVisualizer = (function () {
 		toplevelFuncObjects
             .order() // VERY IMPORTANT to put in the order corresponding to data elements
             .each(function (objID, i) {
-            //console.log('NEW/UPDATE ELT', objID);
-            // TODO: add a smoother transition in the future
-            // Right now, just delete the old element and render a new one in its place
 			$(this).empty();
+			//render the functions and class definitions in this block
 			if (curThing[objID][0] === "FUNCTION" || curThing[objID][0] === "CLASS" )
             	myViz.renderCompoundObject(objID, curInstr, $(this), true);
             
@@ -2347,7 +2366,10 @@ var DataVisualizer = (function () {
         }
 
 
-		myViz.renderFlowStructures(curInstr);		
+		// calling the rendering of the IFs and FORs here
+		myViz.renderFlowStructures(curInstr);	
+		
+		
         // TODO: coalesce code for rendering globals and stack frames,
         // since there's so much copy-and-paste grossness right now
         // render all global variables IN THE ORDER they were created by the program,
@@ -2399,7 +2421,8 @@ var DataVisualizer = (function () {
 											return 'stackFrameValue'; });
 
 
-		
+		//determining the global variables that got changed in the current line
+		//just to show to the user which values are currently getting altered
 		var changedVars = [];
 		var prevEntry = {};
 		if(curInstr > 0)
@@ -2440,6 +2463,7 @@ var DataVisualizer = (function () {
 					$(this).css("border", "0px");
 					$(this).html("");
 				}
+				//highlighting the changed variables
 				else{
 						$(this).append('<div class = "PrevVal" >' + 'Prev Val' + '</div>');
 						myViz.renderNestedObject(val, curInstr-1, $(this));
@@ -2458,6 +2482,8 @@ var DataVisualizer = (function () {
 				
 			
             else if (i == 1) {
+
+				/* here we are colorcoding the variable values based on the type */
 				var clr = "transparent";
 				var val = curEntry.globals[varname];
 				if (!(val instanceof Array)){
@@ -2701,6 +2727,8 @@ var DataVisualizer = (function () {
 				return 'stackFrameVar' ;
 			return 'stackFrameValue'; });
 
+
+		//similarly, finding the latest changed local variables
 		changedVars = [];
 		prevEntry = {};
 		if(curInstr > 0)
@@ -2709,8 +2737,6 @@ var DataVisualizer = (function () {
 			var Prevno = this.curTrace[curInstr-1].stack_to_render.length;
 			var Curno = this.curTrace[curInstr].stack_to_render.length;
 			if(Prevno >= Curno && Curno>0){
-				//console.log("curno");
-				//console.log(Curno);
 				prevEntry = this.curTrace[curInstr-1].stack_to_render[Curno-1];
 				var prevLocals = this.curTrace[curInstr-1].stack_to_render[Curno-1].encoded_locals;
 				var curLocals = curEntry.stack_to_render[Curno-1];
@@ -2754,6 +2780,8 @@ var DataVisualizer = (function () {
 					$(this).css("border", "0px");
 					$(this).html("");
 				}
+
+				//highlighting the last changed vars
 				else{
 						$(this).append('<div class = "PrevVal" >' + 'Prev Val' + '</div>');
 						myViz.renderNestedObject(val, curInstr-1, $(this));
@@ -2764,6 +2792,8 @@ var DataVisualizer = (function () {
 				}
 					
 			}
+
+			//colorcoding the values based on type
             else if (i == 1) {
 				var clr = "transparent";
 				var val = frame.encoded_locals[varname];
@@ -3947,18 +3977,28 @@ var CodeDisplay = (function () {
         var gutterSVG = this.domRoot.find('svg#leftCodeGutterSVG');
 
 
+		/*
+		this is where we find the frequency of execution of each code line and colorcode it accordingly
+		We have decided to simply alter ONLY the necessary div whenever the execution level is changed
+		So, instead of rerendering the entire codeoutput pane each time, we simply change only the necessary valued
+		Thus the code pointer arrow details are preserved */
         var myViz = this.owner;
         var freqList = [];
 		//var colorList = ['lightgrey', '#ffaa00', '#ffcc66',  '#ffa64d', '#ff8c1a', '#ff8533', '#ff6600','#ff5c33', '#ff3300', '#e62e00', '#e60000'];
+		//this is our color palette!
 		var colorList = ['lightgrey', '#FFEE00', '#FBB806', '#F6830C', '#F24D11', '#ED1717']
 		var colornum = colorList.length - 1;
-        var length = myViz.codeOutputLines.length;
+		var length = myViz.codeOutputLines.length;
+		
+		//initializing the freqlist with 0
         for (var i = 0 ; i<length; i++){
         	freqList.push(0);
         }
         var curInstr = myViz.curInstr;
         var curTrace = myViz.curTrace;
-        var maxFreq = 0
+		var maxFreq = 0
+		
+		//parsing through the current trace from the current instruction to update the respective code line frequency
         for (var i = 0 ; i<= curInstr; i++){
         	var lineno = curTrace[i].line - 1;
         	freqList[lineno] += 1;
@@ -3967,11 +4007,14 @@ var CodeDisplay = (function () {
         	}
         }
 
+		//now, altering the code line color from the state of code during the current instruction
         for (var j = 0; j<length; j++){
         	var c = freqList[j];
         	if(maxFreq > colornum){
         		c = Math.ceil((c/maxFreq)*colornum);
-        	}
+			}
+			
+			//finding the codeline element using it's unique ID
         	var findable = 'table#pyCodeOutput td#lineNo' + (j+1).toString();
         	this.domRoot.find(findable).css('color', colorList[c]);
 
