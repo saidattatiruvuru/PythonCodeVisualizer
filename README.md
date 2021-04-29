@@ -1,24 +1,22 @@
+# PyCodeVis
+
+This is an extension of the popular online tool Python Tutor. It alters the visualization by separating functional components like Functions and Class declarations. It also adds to the original by rendering separate details like For-Loops, If-conditions and code frequency.
+
 Python Tutor -- http://pythontutor.com/ -- helps people overcome a fundamental barrier to learning programming: understanding what happens as the computer executes each line of a program's source code. Using this tool, you can write Python, Java, JavaScript, TypeScript, Ruby, C, and C++ programs in your Web browser and visualize what the computer is doing step-by-step as it executes those programs.
 
 This tool was created by [Philip Guo](http://pgbovine.net/) in January 2010. [See project history](history.txt).
 
-The latest development version of the code is in [v5-unity](v5-unity/),
-although lots of legacy documentation still resides in [v3](v3/).
-
-- [Unsupported features and known bugs](https://github.com/pgbovine/OnlinePythonTutor/blob/master/unsupported-features.md)
-- [Frequently Asked Questions](v3/docs/user-FAQ.md)
-- [Overview for Developers](v3/docs/developer-overview.md)
-
 All documentation is viewable online at: https://github.com/pgbovine/OnlinePythonTutor/tree/master/v3/docs
 
+### The New Version
 
-### Quick Start
+The bcode ase has been borrowed from [this](https://github.com/ajesse11x/OnlinePythonTutor) repository.
 
-BY FAR the most preferred way to use Python Tutor is via the official website, since it contains the latest updates: http://pythontutor.com/
 
-You can use [iframe embedding](v3/docs/embedding-HOWTO.md) to easily embed visualizations on your webpage.
+### How To Run
 
-If you want to run locally on your own computer, to run Python visualizations try:
+All the code is in the v5-unity directory.
+To run locally on your own computer, to run Python visualizations try:
 
 ```
 pip install bottle # make sure the bottle webserver (http://bottlepy.org/) is installed
@@ -28,56 +26,29 @@ python bottle_server.py
 
 You should see the visualizer at: http://localhost:8003/visualize.html
 
-... and the live programming environment at: http://localhost:8003/live.html 
+- Type the python code in the code box in the page that opens up
+- Click the 'Visualize Code' button
+- Move through the code by using the Next or Prev button. You can set-up intermediate stop points to directly jump between too
+- The color of the code line number specifies the frequency of usage of that corresponding code line: grey, if unvisited and darkening shades of yellow to red to indicate increasing frequency
+- There are four sections in the execution visualization: Functions & classes, Frames, Objects and For & If structures
+- The Functions and Classes section shows all the global functions and class definitions
+- The Frames section shows all the frame-wise variables both local and global
+- The Objects section shows the complex objects connected to their declaration instance in the frames section
+- The For and If section visualizes all the current open loops and iterations and shows various details such as the current iteration number and the truth value of the condition in the If
 
-However, it can be hard to run your own visualizer locally for
-non-Python languages, since there are complex dependencies in v4-cokapi/ that
-I haven't yet cleanly packaged up. By default, the local version you run will
-*call my own server to run the non-Python backends*, so please be mindful of
-your bandwidth usage.
+Traverse through the code and have a fun experience learning!
 
-For further directions, see [Overview for Developers](v3/docs/developer-overview.md) or explore the [rest of the docs](v3/docs/).
+
+
+### The Code Alterations
+
+All the code alterations are within the v5-unity/build/visualize.bundle.js file
+Any change to this file will be directly reflected in the local pytutor when reloading
 
 
 ### Acknowledgments
 
 For code or security contributions
+- The original Python Tutor repository at: https://github.com/pgbovine/OnlinePythonTutor
+- The forked repository: https://github.com/ajesse11x/OnlinePythonTutor
 
-- John DeNero - for helping with the official Python 3 port and lots of code patches
-- Chris Horne - https://github.com/lahwran - for security tips
-- Joshua Landau - joshua@landau.ws - for security tips
-- David Wyde - https://davidwyde.com/ - for security tips
-- Peter Wentworth and his students - for working on the original Python 3 fork circa 2010/2011
-- Brad Miller - for adding pop-up question dialogs to visualizations, and other bug fixes
-- David Pritchard and Will Gwozdz - for the Java visualizer and other frontend enhancements
-- Peter Robinson - for v3/make_visualizations.py
-- Chris Meyers - for custom visualizations such as v3/matrix.py and v3/htmlFrame.py
-- Irene Chen - for holistic visualization mode -- v3/js/holistic.js
-
-
-For general advice and feedback about this project:
-
-- Ned Batchelder
-- Jennifer Campbell
-- John Dalbey
-- John DeNero
-- Fredo Durand
-- Michael Ernst
-- David Evans
-- Paul Gries
-- Mark Guzdial
-- Adam Hartz
-- Sean Lip
-- Tomas Lozano-Perez
-- Bertram Ludaescher
-- Brad Miller
-- Rob Miller
-- Peter Norvig
-- Andrew Petersen
-- David Pritchard
-- Suzanne Rivoire
-- Guido van Rossum
-- Peter Wentworth
-- David Wilkins
-
-... and many, many more!
